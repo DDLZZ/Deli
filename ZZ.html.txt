@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <!-- 手机端适配，微信浏览器兼容 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum‑scale=1.0,user‑scalable=no"/>
+  <title>礼金查询</title>
+  <style>
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body{
+      background:#f5f5f5;
+      font-size:14px;
+      padding:12px;
+      padding-bottom:30px;
+    }
+    .search-box{
+      background:#ffffff;
+      border-radius:12px;
+      padding:14px;
+      margin-bottom:12px;
+    }
+    #keyword{
+      width:100%;
+      border:1px solid #dddddd;
+      border-radius:8px;
+      padding:12px 14px;
+      font-size:16px;
+      outline: none;
+    }
+    .stat-card{
+      background:#fff;
+      border-radius:12px;
+      padding:16px;
+      display:flex;
+      justify-content:space-between;
+      margin-bottom:12px;
+    }
+    .container{
+      position:relative;
+    }
+    .list-wrap{
+      padding-right:26px;
+    }
+    .group-title{
+      background:#e8edf4;
+      padding:10px 12px;
+      font-weight:bold;
+      border-radius:8px 8px 0 0;
+      margin-top:10px;
+    }
+    .item-row{
+      background:#ffffff;
+      display:flex;
+      align-items:center;
+      padding:16px 12px;
+      border-bottom:1px solid #eeeeee;
+    }
+    .name{flex:2;font-size:15px;}
+    .money{flex:1;color:#d83030;font-weight:bold;font-size:15px;}
+    .page{flex:1;color:#666666;font-size:12px;text-align:right;}
+
+    /*右侧字母侧边栏*/
+    .side-index{
+      position:fixed;
+      right:6px;
+      top:200px;
+      display:flex;
+      flex-direction:column;
+      z-index:99;
+    }
+    .side-item{
+      font-size:11px;
+      line-height:22px;
+      color:#999999;
+      cursor:pointer;
+    }
+    .side-item.active{
+      color:#07c160;
+      font-weight:bold;
+    }
+  </style>
+</head>
+<body>
+<div class="search-box">
+  <input id="keyword" placeholder="输入姓名 / 姓氏大写字母搜索"/>
+</div>
+<div class="stat-card">
+  <div>总人数：<span id="totalCount">0</span> 人</div>
+  <div>总礼金：¥<span id="totalMoney">0</span></div>
+</div>
+
+<div class="container">
+  <div class="list-wrap" id="listWrap"></div>
+  <div class="side-index" id="sideIndex"></div>
+</div>
+
+<script>
+// 礼金全部原始数据，以后新增记录在这里复制添加
+const originData = [
+    {"No":1,"姓氏大写字母":"B","姓名":"柏昌友","金额":300,"礼金本原始页码":"P5"},
+    {"No":2,"姓氏大写字母":"C","姓名":"蔡成华","金额":500,"礼金本原始页码":"P1"},
+    {"No":3,"姓氏大写字母":"C","姓名":"蔡华基","金额":200,"礼金本原始页码":"P2"},
+    {"No":4,"姓氏大写字母":"C","姓名":"曹玉琼","金额":1000,"礼金本原始页码":"P3"},
+    {"No":5,"姓氏大写字母":"C","姓名":"曹玉菁","金额":200,"礼金本原始页码":"P3"},
+    {"No":6,"姓氏大写字母":"C","姓名":"陈明声","金额":1000,"礼金本原始页码":"P5"},
+    {"No":7,"姓氏大写字母":"F","姓名":"方天志","金额":1000,"礼金本原始页码":"P2"},
+    {"No":8,"姓氏大写字母":"F","姓名":"胡尚海","金额":200,"礼金本原始页码":"P2"},
+    {"No":9,"姓氏大写字母":"H","姓名":"贺金浪","金额":100,"礼金本原始页码":"P2"},
+    {"No":10,"姓氏大写字母":"H","姓名":"黄和豪","金额":1000,"礼金本原始页码":"P5"},
+    {"No":11,"姓氏大写字母":"H","姓名":"韩儒刚","金额":100,"礼金本原始页码":"P6"},
+    {"No":12,"姓氏大写字母":"J","姓名":"蒋明军","金额":100,"礼金本原始页码":"P4"},
+    {"No":13,"姓氏大写字母":"J","姓名":"蒋明荣","金额":200,"礼金本原始页码":"P6"},
+    {"No":14,"姓氏大写字母":"L","姓名":"刘荣喜","金额":500,"礼金本原始页码":"P1"},
+    {"No":15,"姓氏大写字母":"L","姓名":"刘玉奎","金额":500,"礼金本原始页码":"P1"},
+    {"No":16,"姓氏大写字母":"L","姓名":"刘贵新","金额":200,"礼金本原始页码":"P3"},
+    {"No":17,"姓氏大写字母":"L","姓名":"罗光辉","金额":100,"礼金本原始页码":"P6"},
+    {"No":18,"姓氏大写字母":"P","姓名":"潘朝云","金额":100,"礼金本原始页码":"P1"},
+    {"No":19,"姓氏大写字母":"P","姓名":"潘朝贵","金额":100,"礼金本原始页码":"P1"},
+    {"No":20,"姓氏大写字母":"P","姓名":"彭波","金额":500,"礼金本原始页码":"P2"},
+    {"No":21,"姓氏大写字母":"P","姓名":"潘朝伟","金额":100,"礼金本原始页码":"P4"},
+    {"No":22,"姓氏大写字母":"Q","姓名":"钱广","金额":1000,"礼金本原始页码":"P2"},
+    {"No":23,"姓氏大写字母":"Q","姓名":"秦明进","金额":300,"礼金本原始页码":"P3"},
+    {"No":24,"姓氏大写字母":"R","姓名":"冉菲","金额":1000,"礼金本原始页码":"P2"},
+    {"No":25,"姓氏大写字母":"R","姓名":"冉如举","金额":500,"礼金本原始页码":"P3"},
+    {"No":26,"姓氏大写字母":"R","姓名":"冉如静","金额":300,"礼金本原始页码":"P3"},
+    {"No":27,"姓氏大写字母":"T","姓名":"田维明","金额":100,"礼金本原始页码":"P6"},
+    {"No":28,"姓氏大写字母":"W","姓名":"王国华","金额":200,"礼金本原始页码":"P1"},
+    {"No":29,"姓氏大写字母":"W","姓名":"王道平","金额":300,"礼金本原始页码":"P4"},
+    {"No":30,"姓氏大写字母":"W","姓名":"王明权","金额":300,"礼金本原始页码":"P4"},
+    {"No":31,"姓氏大写字母":"X","姓名":"向阳","金额":300,"礼金本原始页码":"P1"},
+    {"No":32,"姓氏大写字母":"X","姓名":"徐碧奎","金额":300,"礼金本原始页码":"P6"},
+    {"No":33,"姓氏大写字母":"Y","姓名":"杨天奎","金额":600,"礼金本原始页码":"P1"},
+    {"No":34,"姓氏大写字母":"Y","姓名":"杨三妹","金额":300,"礼金本原始页码":"P3"},
+    {"No":35,"姓氏大写字母":"Y","姓名":"杨老明","金额":500,"礼金本原始页码":"P4"},
+    {"No":36,"姓氏大写字母":"Y","姓名":"杨根生","金额":500,"礼金本原始页码":"P4"},
+    {"No":37,"姓氏大写字母":"Y","姓名":"杨忠保","金额":100,"礼金本原始页码":"P4"},
+    {"No":38,"姓氏大写字母":"Y","姓名":"袁伍豪","金额":500,"礼金本原始页码":"P4"},
+    {"No":39,"姓氏大写字母":"Y","姓名":"袁大举","金额":300,"礼金本原始页码":"P5"},
+    {"No":40,"姓氏大写字母":"Y","姓名":"袁大宣","金额":300,"礼金本原始页码":"P5"},
+    {"No":41,"姓氏大写字母":"Y","姓名":"袁大兴","金额":4000,"礼金本原始页码":"P5"},
+    {"No":42,"姓氏大写字母":"Y","姓名":"袁忠友","金额":100,"礼金本原始页码":"P6"},
+    {"No":43,"姓氏大写字母":"Z","姓名":"张德华","金额":300,"礼金本原始页码":"P2"},
+    {"No":44,"姓氏大写字母":"Z","姓名":"张玉银","金额":500,"礼金本原始页码":"P3"},
+    {"No":45,"姓氏大写字母":"Z","姓名":"赵珍林","金额":500,"礼金本原始页码":"P5"},
+    {"No":46,"姓氏大写字母":"Z","姓名":"赵义先","金额":200,"礼金本原始页码":"P5"},
+    {"No":47,"姓氏大写字母":"Z","姓名":"张德松","金额":100,"礼金本原始页码":"P6"}
+];
+
+const keywordInput = document.getElementById('keyword');
+const listWrap = document.getElementById('listWrap');
+const sideIndexDom = document.getElementById('sideIndex');
+const totalCountDom = document.getElementById('totalCount');
+const totalMoneyDom = document.getElementById('totalMoney');
+
+const allLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+
+//渲染侧边字母栏
+function renderSide(hasMap){
+  sideIndexDom.innerHTML = '';
+  allLetters.forEach(l=>{
+    const div = document.createElement('div');
+    div.className = 'side-item' + (hasMap[l]?' active':'');
+    div.innerText = l;
+    div.onclick = ()=>{
+      const el = document.getElementById('g‑'+l);
+      if(el) el.scrollIntoView({behavior:'smooth'});
+    }
+    sideIndexDom.appendChild(div);
+  })
+}
+
+//渲染列表+搜索过滤
+function renderList(keyword){
+  let data = [...originData];
+  if(keyword.trim()){
+    const kw = keyword.trim().toUpperCase();
+    data = data.filter(row=>{
+      return row.姓名.includes(keyword) || row.姓氏大写字母 === kw;
+    })
+  }
+  const groupMap = {};
+  data.forEach(row=>{
+    const l = row.姓氏大写字母;
+    if(!groupMap[l]) groupMap[l]=[];
+    groupMap[l].push(row);
+  })
+  const keys = Object.keys(groupMap).sort();
+  const hasMap = {};
+  keys.forEach(k=>hasMap[k]=true);
+  renderSide(hasMap);
+
+  listWrap.innerHTML = '';
+  keys.forEach(letter=>{
+    const arr = groupMap[letter];
+    const groupDiv = document.createElement('div');
+    groupDiv.id = 'g‑'+letter;
+    const title = document.createElement('div');
+    title.className = 'group-title';
+    title.innerText = letter;
+    groupDiv.appendChild(title);
+
+    arr.forEach(item=>{
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <div class="name">${item.姓名}</div>
+        <div class="money">¥${item.金额}</div>
+        <div class="page">页码：${item.礼金本原始页码}</div>
+      `;
+      groupDiv.appendChild(row);
+    })
+    listWrap.appendChild(groupDiv);
+  })
+
+  const sumMoney = data.reduce((s,i)=>s+Number(i.金额),0);
+  totalCountDom.innerText = data.length;
+  totalMoneyDom.innerText = sumMoney;
+}
+
+keywordInput.addEventListener('input',e=>{
+  renderList(e.target.value);
+})
+
+renderList('');
+</script>
+</body>
+</html>
